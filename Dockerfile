@@ -16,5 +16,6 @@ COPY . /usr/src/app
 # Expose Port
 EXPOSE 5000
 # Start application
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "app:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]
+
 # CMD [ "python", "manage.py", "runserver" ]
