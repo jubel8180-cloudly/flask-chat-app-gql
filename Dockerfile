@@ -9,6 +9,7 @@ WORKDIR /usr/src/app
 
 # Install requirements
 RUN pip install -r requirements.txt
+RUN pip install proto-plus
 
 # Copy the rest
 COPY . /usr/src/app
