@@ -1,0 +1,253 @@
+scalar Datetime
+
+schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+}
+
+type Query {
+    todos: TodosResult!
+    todo(todoId: ID!): TodoResult
+    viewer: Viewer!
+    getUser(input:GetUserInput!): User
+    getWorkspace(input: GetWorkspaceInput!): Workspace
+    getTenantWorkspace(input: GetTenantWorkspaceInput!): Workspace
+    getChannel(input: GetChannelInput!): Channel
+    listUsers(input: ListInput): ListUserConnection
+    listChannels(input: ListInput): ListChannelConnection
+    openConversation(input: OpenConversationInput!): Channel
+}
+
+type Mutation {
+    createWorkspace(input: CreateWorkspaceInput!): Workspace
+    createMessage(senderId: String, recipientId: String, content: String): createMessageResult
+
+    #    deleteTodo(todoId: ID!): deleteTodoResult!
+    #    markDone(todoId: ID!): TodoResult!
+    #    updateDueDate(todoId: ID!, newDate: String!): TodoResult!
+}
+
+type Subscription {
+    messages(userId: String): Message
+}
+
+input GetUserInput {
+  userId: ID!
+}
+
+input GetWorkspaceInput {
+    id: ID!
+}
+
+input CreateWorkspaceInput {
+    name: String!
+    email: String!
+    description: String
+    tenantId: String!
+    appId: String!
+}
+
+input GetTenantWorkspaceInput {
+  tenantId: ID!
+  appId: ID!
+}
+
+input GetChannelInput {
+  channelId: ID!
+}
+
+input ListInput {
+  limit: Int
+  nextToken: String
+}   
+
+input OpenConversationInput {
+  channelId: ID # Resume a conversation by supplying an im or mpim's ID. Or provide the users field instead.
+  userIds: [ID!] # List of users. If only one user is included, this creates a 1:1 DM.
+}
+
+type Todo {
+    id: ID!
+    description: String!
+    completed: Boolean!
+    dueDate: String!
+}
+
+type TodoResult {
+    success: Boolean!
+    errors: [String]
+    todo: Todo
+}
+
+type TodosResult {
+    success: Boolean!
+    errors: [String]
+    todos: [Todo]
+}
+
+type deleteTodoResult {
+    success: Boolean!
+    errors: [String]
+}
+
+type Workspace {
+    id: ID!
+    name: String!
+    email: String!
+    description: String
+    secrets: String
+    createdAt: Datetime
+    updatedAt: Datetime
+    active: Boolean
+    tenantId: ID!
+    appId: ID!
+}
+
+type Viewer {
+    id: ID!
+    workspace: ID!
+    username: String
+    fullName: String
+    deviceTokens: [String!]
+    team: ID
+    profile: UserProfile
+    role: String
+    tz: String # 	A human-readable string for the geographic timezone-related region this user has specified in their account.
+    tzLabel: String # Describes the commonly used name of the tz timezone.
+    tzOffset: String # Indicates the number of seconds to offset UTC time by for this user's tz.
+    avatarUrl: String # Deprecated use profile.imageOriginal
+    isAdmin: Boolean # Indicates whether the user is an Admin of the current workspace.
+    isOwner: Boolean # 	Indicates whether the user is an Owner of the current workspace.
+    isPrimaryOwner: Boolean # Indicates whether the user is the Primary Owner of the current workspace.
+    isRestricted: Boolean
+    isActive: Boolean
+    updated: Datetime # An Datetime indicating when the user object was last updated.
+    locale: String # 	Contains a IETF language code that represents this user's chosen display language. Useful for localizing your apps.
+    locationFilterOn: String
+    locationId: Int
+    locationIds: [String]
+    channels(limit: Int, nextToken: String): ListChannelConnection
+      #     @lambda(className: "resolvers.users.GetChannelsForViewer")
+
+}
+
+type UserProfile {
+    title: String   
+    displayName: String
+    phone: String
+    skype: String
+    statusText: String
+    statusEmoji: String
+    statusExpiration: Datetime
+    avatarHash: String # Not sure if I want this yet? These would be hardcoded Avatars.
+    email: String
+    imageOriginal: String # This is the original image with original huge size
+    image24: String # Resized image 24x24
+    image32: String # Resized image 32x32
+    image48: String # Resized image 48x48
+}
+
+type User {
+  id: ID!
+  workspace: ID!
+  team: ID
+  profile: UserProfile
+  deleted: Boolean!
+  role: String
+  isActive: Boolean
+  locationFilterOn: String
+  locationId: Int
+  locationIds: [String]
+  tz: String # 	A human-readable string for the geographic timezone-related region this user has specified in their account.
+  tzLabel: String # Describes the commonly used name of the tz timezone.
+  tzOffset: String # Indicates the number of seconds to offset UTC time by for this user's tz.
+  avatarUrl: String # Deprecated use profile.imageOriginal
+  isAdmin: Boolean # Indicates whether the user is an Admin of the current workspace.
+  isOwner: Boolean # 	Indicates whether the user is an Owner of the current workspace.
+  isPrimaryOwner: Boolean # Indicates whether the user is the Primary Owner of the current workspace.
+  isRestricted: Boolean
+  isBot: Boolean # Indicates whether the user is actually a bot user.
+  isStranger: Boolean
+  updated: Datetime # An Datetime indicating when the user object was last updated.
+  locale: String # 	Contains a IETF language code that represents this user's chosen display language. Useful for localizing your apps.
+  lastActiveAt: Datetime # Time the User was last active using the app
+}
+
+type Channel {
+  id: ID!
+  name: String
+  workspace: String!
+  nameNormalized: String!
+  description: String
+  isPrivate: Boolean! # means the conversation is privileged between two or more members. Meet their privacy expectations.
+  isReadOnly: Boolean! # means the conversation can't be written to by typical users. Admins may have the ability.
+  isArchived: Boolean! # indicates a conversation is archived. Frozen in time.
+  isChannel: Boolean! # indicates whether a conversation is a public channel. Everything said in a public channel can be read by anyone else belonging to a workspace. is_private will be false. Check both just to be sure, why not?
+  isGroup: Boolean! # means the channel is a private channel. is_private will also be true.
+  isIM: Boolean! # means the conversation is a direct message between two distinguished individuals or a user and a bot. Yes, it's an is_private conversation.
+  isMPIM: Boolean! # represents an unnamed private conversation between multiple users. It's an isPrivate kind of thing.
+  isMember: Boolean # indicates the user or bot user making the API call is itself a member of the conversation.
+  readOnly: Boolean
+  createdAt: Datetime!
+#   firstMessage: Message  # first message in the Channel
+#     @lambda(className: "resolvers.messages.GetFirstMessageForChannel")
+#   latestMessage: Message  # latest message in the Channel
+#     @lambda(className: "resolvers.messages.GetLatestMessageForChannel")
+  lastRead: Datetime # is the timestamp for the last message the calling user has read in this channel.
+#   unreadCount: Int
+#     @lambda(className: "resolvers.messages.GetChannelUnreadMessageCount")
+  unreadCountDisplay: Int
+  memberCount: Int
+  messageCount: Int
+  creator: User
+    # @lambda(
+    #   className: "resolvers.dynamodb.DynamoDbSourceBatchGetResolver"
+    #   batch: true
+    #   kwargs: [
+    #     { key: "id_field", value: "creator" }
+    #     { key: "sort_key", value: "User" }
+    #   ]
+    # )
+
+#   members(
+#     limit: Int
+#     nextToken: String
+#     sortOrder: SortOrder
+#   ): ListUserConnection @lambda(className: "resolvers.users.GetUsersForChannel")
+#   messages(
+#     limit: Int
+#     nextToken: String
+#     sortOrder: SortOrder
+#   ): ListMessageConnection
+#     @lambda(className: "resolvers.messages.GetMessagesForChannel")
+}
+
+type ListChannelConnection {
+  items: [Channel]
+  nextToken: String
+}
+
+type ListUserConnection {
+  items: [User]
+  nextToken: String
+}
+
+
+type Message {
+    content: String
+    senderId: String
+    recipientId: String
+}
+
+type createMessageResult {
+    message: Message
+    success: Boolean!
+    errors: [String]
+}
+
+type messagesResult {
+    messages: [Message]
+    success: Boolean!
+    errors: [String]
+}
